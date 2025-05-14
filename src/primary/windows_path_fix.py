@@ -141,6 +141,16 @@ def setup_windows_paths():
             if not os.path.exists(static_dir):
                 os.makedirs(static_dir)
                 logger.info(f"Created static directory at: {static_dir}")
+            
+            # Create essential static subdirectories for CSS and JS
+            css_dir = os.path.join(static_dir, "css")
+            js_dir = os.path.join(static_dir, "js")
+            logo_dir = os.path.join(static_dir, "logo")
+            
+            for dir_path in [css_dir, js_dir, logo_dir]:
+                if not os.path.exists(dir_path):
+                    os.makedirs(dir_path)
+                    logger.info(f"Created static subdirectory at: {dir_path}")
                 
             # IMPORTANT: Extract templates from setup_html.py
             try:
@@ -170,6 +180,103 @@ def setup_windows_paths():
                             f.write(INDEX_HTML)
                             
                     logger.info("Created template files directly")
+                
+                # Create essential CSS and JS files
+                bootstrap_css_path = os.path.join(css_dir, "bootstrap.min.css")
+                if not os.path.exists(bootstrap_css_path):
+                    with open(bootstrap_css_path, 'w') as f:
+                        f.write("""/*!
+ * Bootstrap v5.1.3 (https://getbootstrap.com/)
+ * Copyright 2011-2021 The Bootstrap Authors
+ * Copyright 2011-2021 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */:root{--bs-blue:#0d6efd;--bs-indigo:#6610f2;--bs-purple:#6f42c1;--bs-pink:#d63384;--bs-red:#dc3545;--bs-orange:#fd7e14;--bs-yellow:#ffc107;--bs-green:#198754;--bs-teal:#20c997;--bs-cyan:#0dcaf0;--bs-white:#fff;--bs-gray:#6c757d;--bs-gray-dark:#343a40;--bs-gray-100:#f8f9fa;--bs-gray-200:#e9ecef;--bs-gray-300:#dee2e6;--bs-gray-400:#ced4da;--bs-gray-500:#adb5bd;--bs-gray-600:#6c757d;--bs-gray-700:#495057;--bs-gray-800:#343a40;--bs-gray-900:#212529;--bs-primary:#0d6efd;--bs-secondary:#6c757d;--bs-success:#198754;--bs-info:#0dcaf0;--bs-warning:#ffc107;--bs-danger:#dc3545;--bs-light:#f8f9fa;--bs-dark:#212529;--bs-primary-rgb:13,110,253;--bs-secondary-rgb:108,117,125;--bs-success-rgb:25,135,84;--bs-info-rgb:13,202,240;--bs-warning-rgb:255,193,7;--bs-danger-rgb:220,53,69;--bs-light-rgb:248,249,250;--bs-dark-rgb:33,37,41;--bs-white-rgb:255,255,255;--bs-black-rgb:0,0,0;--bs-body-color-rgb:33,37,41;--bs-body-bg-rgb:255,255,255;--bs-font-sans-serif:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";--bs-font-monospace:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;--bs-gradient:linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));--bs-body-font-family:var(--bs-font-sans-serif);--bs-body-font-size:1rem;--bs-body-font-weight:400;--bs-body-line-height:1.5;--bs-body-color:#212529;--bs-body-bg:#fff}*,::after,::before{box-sizing:border-box}@media (prefers-reduced-motion:no-preference){:root{scroll-behavior:smooth}}body{margin:0;font-family:var(--bs-body-font-family);font-size:var(--bs-body-font-size);font-weight:var(--bs-body-font-weight);line-height:var(--bs-body-line-height);color:var(--bs-body-color);text-align:var(--bs-body-text-align);background-color:var(--bs-body-bg);-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}hr{margin:1rem 0;color:inherit;background-color:currentColor;border:0;opacity:.25}hr:not([size]){height:1px}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem;font-weight:500;line-height:1.2}h1{font-size:calc(1.375rem + 1.5vw)}@media (min-width:1200px){h1{font-size:2.5rem}}h2{font-size:calc(1.325rem + .9vw)}@media (min-width:1200px){h2{font-size:2rem}}h3{font-size:calc(1.3rem + .6vw)}@media (min-width:1200px){h3{font-size:1.75rem}}h4{font-size:calc(1.275rem + .3vw)}@media (min-width:1200px){h4{font-size:1.5rem}}h5{font-size:1.25rem}h6{font-size:1rem}p{margin-top:0;margin-bottom:1rem}""")
+                    logger.info(f"Created bootstrap.min.css at: {bootstrap_css_path}")
+                
+                style_css_path = os.path.join(css_dir, "style.css")
+                if not os.path.exists(style_css_path):
+                    with open(style_css_path, 'w') as f:
+                        f.write("""
+/* Custom styles for Huntarr */
+body {
+    background-color: #121212 !important;
+    color: #f8f9fa !important;
+}
+.bg-black {
+    background-color: #000 !important;
+}
+.card-header {
+    font-weight: bold;
+}
+.navbar {
+    background-color: #000000 !important;
+}
+.bg-dark {
+    background-color: #1a1d24 !important;
+}
+.bg-secondary {
+    background-color: #252a34 !important;
+}
+.bg-primary {
+    background-color: #0e639c !important;
+}
+.card {
+    margin-bottom: 1rem;
+    border: 1px solid #2c3038;
+}
+.btn-primary {
+    background-color: #0e639c !important;
+    border-color: #0e639c !important;
+}
+.btn-success {
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+}
+.form-control {
+    background-color: #2c3038 !important;
+    color: #f8f9fa !important;
+    border: 1px solid #444;
+}
+.form-control:focus {
+    background-color: #3c3f48 !important;
+    color: #f8f9fa !important;
+}
+a {
+    color: #0dcaf0;
+}
+.text-light {
+    color: #adb5bd !important;
+}
+.table-dark {
+    background-color: #252a34 !important;
+}
+""")
+                    logger.info(f"Created style.css at: {style_css_path}")
+                
+                bootstrap_js_path = os.path.join(js_dir, "bootstrap.bundle.min.js")
+                if not os.path.exists(bootstrap_js_path):
+                    with open(bootstrap_js_path, 'w') as f:
+                        f.write("""/*!
+ * Bootstrap v5.1.3 (https://getbootstrap.com/)
+ * Copyright 2011-2021 The Bootstrap Authors (https://github.com/twbs/bootstrap/graphs/contributors)
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):(t="undefined"!=typeof globalThis?globalThis:t||self).bootstrap=e()}(this,(function(){"use strict";const t="transitionend",e=t=>{let e=t.getAttribute("data-bs-target");if(!e||"#"===e){let i=t.getAttribute("href");if(!i||!i.includes("#")&&!i.startsWith("."))return null;i.includes("#")&&!i.startsWith("#")&&(i=`#${i.split("#")[1]}`),e=i&&"#"!==i?i.trim():null}return e},i=t=>{const i=e(t);return i&&document.querySelector(i)?i:null},n=t=>{const i=e(t);return i?document.querySelector(i):null},s=t=>{t.dispatchEvent(new Event(n))};return{dropdown:{setDropdownList:function(){},clearDropdownList:function(){}}}}))""")
+                    logger.info(f"Created bootstrap.bundle.min.js at: {bootstrap_js_path}")
+                
+                # Create a minimal logo file
+                logo_file = os.path.join(logo_dir, "256.png")
+                if not os.path.exists(logo_file):
+                    try:
+                        # Add base64 encoded small logo
+                        import base64
+                        logo_data = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9TpUUqgnYQcchQnSyIijhKFYtgobQVWnUwufQLmjQkKS6OgmvBwY/FqoOLs64OroIg+AHi6OSk6CIl/i8ptIjx4Lgf7+497t4BQqPCVLNrAlA1y0jFY2I2tyoGXuHHCPohICgxU0+kFzPwHF/38PH1LsqzvM/9OXqVvMkAn0g8x3TDIt4gnt20dM77xGFWklTic+Jxgy5I/Mh12eU3zkWHBZ4ZNjKpeeIwsVjsYLmDWclQiaeJI4qqUb6QdVnhvMVZrdRY6578haG8tpLmOs1hxLGEBJIQIaOGMiqwEKVVI8VEivZjHv4hx58kl0yuMhg5FlCFCsnxg//B727NwtSkmxSKA4EX2/4YA4K7QLNu29/Htt08AfzPwJXW9lcbwOwn6c22FjwC+reBi+u2Ju8BlzvA4JMuGZIj+WkKhQLwfkbflAMGb4G+Nbe31j5OH4AMdbV8AxwcAqNFyl73eHdPZ2//nmn19wONxHKyrjUcgAAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+UKCRUOAYrRw1QAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAFFklEQVR42u2bW2hcVRSGv3VmJpnJbdLEJE1S0zaJ9VYVtFLE+qBiKViUilYrpRcUwQtUEFHwUvBNQcUXRUTxUhAUsdQHsVosogjaom2xtDW1Tdrm1iSdyWQy1z3L5yYz5+Sck5w5ZwLO+WGTTM7ea6/177X22tfeE8HQbDxlU2UCAdgMdAEdQDvQBsxz/mYUGAKuAAPARaAPuCCpLVPuiy8dRHzwzAZ2AruBLcC6AP28BhwHjgC9ktqKZSTAbDxlNwgBO4GHgXsBPc/uTQPHgMPA55LaZm5IAsxGQ9wNPAVsA8IFGjaggc+AN4GTktpMXQLMxsKqBB4BngHWlmABTwJHgYOSWs+fLgFm40GtBJ4FHgQqSrh4p4CXgY+lKjWfz5AEOI1vBg4ADxdQxAbtfPFvA89LalPhCDBC1wFvOnN+ro0AvwIXgKQjklVAoyOs9xoUxzvAS5LaVXYCzNBpoAv4AKjNYfh+4BPgE0ntG5/JrQAeBVLA3U3Aoa8l38eBSqAH2J+DABLOd08DLTnc53XAm0CfGbqhlERBMHQE+BjYm0MCD0lq3bkI50XAIw4JdTlOQ1JS85XfB3RVJOA+cj9BVkpqPuN/yOzRAGmPBLRKapdzvD9HXUwD3Y5KL40GmKFrgB+Alb7xNVNAB+C1EoZvBs4Bkw6xu82UBtQDTzg/pnOl8R2S2mQAgTeAp12vLZLUekpFQKfHKA84JGRNALDTz88tOQLMxlfTDLwM9AGvlLIUjgFrfK79JKn1+fQRA54HMm10S2pfzRoBx6iyhdNGP5BwRPZaU9HhwCwFLrsMHzaC7fXR+FEzBGkgWkpZtNb6XBt0kZDJjb7ls/EHskXA+zn0u21mZKnusSJJbchWlS2YdM3VEKVNa9PAr8D6LG9pBiImRGxwfDgcyECrfK7ZNnQqZxZCqktJwIqs+lq2rjZDUzazm00D+yW1CQ8SKp37Gj0IMJyLTgHXNYI1PteGnEgIWg/wTJIktcvZGEETuBw0ld3oQ9KIk9nmiwDJFnwqyCCbAw5cW2TxOeA8F7D6fEgbXJDhPgmowGXUXGJHBRTEdVnc95OPBrQB7T5XF6UkZGLA5T6T61cQA5pQ8RmUwF+B+5i9BIxmUYEu4FKg58NmpHuAu4BNcxhA44Apq3cUUVQlGCWI1zpHVzmbFp9k0RsOwj7nPVm/wQydBt4q6PFX2fHHE/jJgL84AnihnAtXKCvP8vqHJLWZhXlAxjnxfmC4TO75t1XZslUqXQPAqzlsZpQlAZMh9rCQlwtXiuBYwII+xkKTRVLrl9ReAPb5bGSWVQLc5bCkNiCpfQbcBRwrwZpvSW/2xST+yA8BvlM1Gbq3SuAv9OPKscyS2mlJ7XFgC3CqiDf46krZ63g6RBZtjI9NZOFn52xtLnRLapckta3AE8D1At9XRzpqLUl1LXBltpJwk5Cha00BrY5yfAX8VODkeDJjZcqcqBkp9n4geL2ktl1S6wE6gQMFmBNn09Vg9bKG8fBfkR+NV7DY5UxwzO1yPlvA2JiPBgxLalZGDQDmOztG3Wb1H5Zbc5a6v/0PGHN8wneAoQIQcL75T1AxZhp4C9hAFuf4BTG+rNgHgUa3TQfUisJFgJOgHgfm+2nDYr+p0WgD9gBPAuvzPP4wCZPF+KJGCFgFdODnswH3BfldEYdP2P8xAw5+OdgIPgNwXkj+G/gB+A44TTGP0f8GbOvpbdTl9psAAAAASUVORK5CYII="
+                        logo_bytes = base64.b64decode(logo_data)
+                        with open(logo_file, 'wb') as f:
+                            f.write(logo_bytes)
+                        logger.info(f"Created logo file at: {logo_file}")
+                    except Exception as e:
+                        logger.error(f"Error creating logo file: {str(e)}")
             except Exception as e:
                 logger.error(f"Error extracting templates from setup_html: {str(e)}")
                 logger.error(traceback.format_exc())
