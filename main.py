@@ -34,18 +34,37 @@ root_logger.info(f"Python sys.path: {sys.path}")
 if sys.platform == 'win32' and len(sys.argv) > 1:
     if sys.argv[1] == '--install-service':
         try:
-            from src.primary.windows_service import install_service
+            from src.primary.windows_service import install_service, is_admin
+            # Check for admin rights before attempting to install
+            if not is_admin():
+                print("\nERROR: Administrator privileges required to install Huntarr as a service.")
+                print("Please right-click on the installer or command prompt and select 'Run as administrator'.")
+                print("\nAlternatively, you can run Huntarr directly without service installation:")
+                print("  python main.py --no-service\n")
+                sys.exit(1)
             success = install_service()
+            if not success:
+                print("\nFallback option: Run Huntarr without service installation:")
+                print("  python main.py --no-service\n")
             sys.exit(0 if success else 1)
         except ImportError:
             root_logger.error("Failed to import Windows service module. Make sure pywin32 is installed.")
+            print("\nFallback option: Run Huntarr without service installation:")
+            print("  python main.py --no-service\n")
             sys.exit(1)
         except Exception as e:
             root_logger.exception(f"Error installing Windows service: {e}")
+            print("\nFallback option: Run Huntarr without service installation:")
+            print("  python main.py --no-service\n")
             sys.exit(1)
     elif sys.argv[1] == '--remove-service':
         try:
-            from src.primary.windows_service import remove_service
+            from src.primary.windows_service import remove_service, is_admin
+            # Check for admin rights before attempting to remove
+            if not is_admin():
+                print("\nERROR: Administrator privileges required to remove the Huntarr service.")
+                print("Please right-click on the command prompt and select 'Run as administrator'.\n")
+                sys.exit(1)
             success = remove_service()
             sys.exit(0 if success else 1)
         except ImportError:
@@ -54,36 +73,75 @@ if sys.platform == 'win32' and len(sys.argv) > 1:
         except Exception as e:
             root_logger.exception(f"Error removing Windows service: {e}")
             sys.exit(1)
+    elif sys.argv[1] == '--no-service' or sys.argv[1] == '--cli':
+        try:
+            # Run directly in CLI mode without Windows service
+            # We'll import run_as_cli later in the main function
+            pass
+        except Exception as e:
+            root_logger.exception(f"Error running in CLI mode: {e}")
+            sys.exit(1)
     elif sys.argv[1] in ['--start', '--stop', '--restart', '--debug', '--update']:
         try:
+            from src.primary.windows_service import is_admin
+            # Check for admin rights before service management
+            if not is_admin() and sys.argv[1] != '--debug':
+                print("\nERROR: Administrator privileges required to manage the Huntarr service.")
+                print("Please right-click on the command prompt and select 'Run as administrator'.")
+                print("\nAlternatively, you can run Huntarr directly without service:")
+                print("  python main.py --no-service\n")
+                sys.exit(1)
+                
             import win32serviceutil
             service_name = "Huntarr"
             if sys.argv[1] == '--start':
-                win32serviceutil.StartService(service_name)
-                print(f"Started {service_name} service")
+                try:
+                    win32serviceutil.StartService(service_name)
+                    print(f"Started {service_name} service")
+                except Exception as e:
+                    print(f"Error starting service: {e}")
+                    print("\nFallback option: Run Huntarr without service:")
+                    print("  python main.py --no-service\n")
+                    sys.exit(1)
             elif sys.argv[1] == '--stop':
                 win32serviceutil.StopService(service_name)
                 print(f"Stopped {service_name} service")
             elif sys.argv[1] == '--restart':
-                win32serviceutil.RestartService(service_name)
-                print(f"Restarted {service_name} service")
+                try:
+                    win32serviceutil.RestartService(service_name)
+                    print(f"Restarted {service_name} service")
+                except Exception as e:
+                    print(f"Error restarting service: {e}")
+                    print("\nFallback option: Run Huntarr without service:")
+                    print("  python main.py --no-service\n")
+                    sys.exit(1)
             elif sys.argv[1] == '--debug':
                 # Run the service in debug mode directly
                 from src.primary.windows_service import HuntarrService
                 win32serviceutil.HandleCommandLine(HuntarrService)
             elif sys.argv[1] == '--update':
                 # Update the service
-                win32serviceutil.StopService(service_name)
-                from src.primary.windows_service import install_service
-                install_service()
-                win32serviceutil.StartService(service_name)
-                print(f"Updated {service_name} service")
+                try:
+                    win32serviceutil.StopService(service_name)
+                    from src.primary.windows_service import install_service
+                    install_service()
+                    win32serviceutil.StartService(service_name)
+                    print(f"Updated {service_name} service")
+                except Exception as e:
+                    print(f"Error updating service: {e}")
+                    print("\nFallback option: Run Huntarr without service:")
+                    print("  python main.py --no-service\n")
+                    sys.exit(1)
             sys.exit(0)
         except ImportError:
             root_logger.error("Failed to import Windows service module. Make sure pywin32 is installed.")
+            print("\nFallback option: Run Huntarr without service:")
+            print("  python main.py --no-service\n")
             sys.exit(1)
         except Exception as e:
             root_logger.exception(f"Error managing Windows service: {e}")
+            print("\nFallback option: Run Huntarr without service:")
+            print("  python main.py --no-service\n")
             sys.exit(1)
 
 try:
@@ -175,6 +233,20 @@ def main():
     # Register signal handlers for graceful shutdown in the main process
     signal.signal(signal.SIGINT, main_shutdown_handler)
     signal.signal(signal.SIGTERM, main_shutdown_handler)
+    
+    # Check if we're running in CLI mode (non-service)
+    if sys.platform == 'win32' and len(sys.argv) > 1 and sys.argv[1] in ['--no-service', '--cli']:
+        try:
+            from src.primary.windows_service import run_as_cli
+            # Run in direct CLI mode (non-service)
+            run_as_cli()
+            return  # Exit after CLI mode completes
+        except ImportError:
+            huntarr_logger.error("Failed to import CLI mode. Falling back to standard mode.")
+            # Continue with standard mode
+        except Exception as e:
+            huntarr_logger.exception(f"Error running in CLI mode: {e}")
+            # Continue with standard mode
 
     background_thread = None
     try:
@@ -228,6 +300,7 @@ def main():
 
 if __name__ == '__main__':
     # Handle Windows service installation/removal commands
+    # Note: Much of the Windows service handling is at the top of the file
     if sys.platform == 'win32' and len(sys.argv) > 1:
         if sys.argv[1] == '--install-service':
             import primary.windows_service as service
