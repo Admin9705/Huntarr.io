@@ -5,8 +5,7 @@ on:
     tags:
       - "*"  # This will trigger on any tag push
     branches:
-      - main  # Also build on main branch pushes
-      - win*  # Build on windows-related branches
+      - "**"  # This will trigger on any branch push
 
 permissions:
   contents: write
