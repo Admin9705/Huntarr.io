@@ -66,16 +66,26 @@ Filename: "{sys}\cmd.exe"; Parameters: "/c timeout /t 3"; Flags: runhidden
 ; Install the service
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--install-service"; Description: "Install Huntarr as a Windows Service"; Tasks: installservice; Flags: runhidden; Check: IsAdminLoggedOn
 ; Grant permissions to the config directory and all subdirectories
-Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config"" /grant Everyone:(OI)(CI)F /T"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\logs"" /grant Everyone:(OI)(CI)F /T"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\frontend"" /grant Everyone:(OI)(CI)F /T"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+
 ; Ensure proper permissions for each important subdirectory (in case the recursive permission failed)
 Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config\logs"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
 Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config\stateful"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
 Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config\user"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config\settings"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config\history"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\frontend\templates"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\frontend\static"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
 ; Start the service
 Filename: "{sys}\net.exe"; Parameters: "start Huntarr"; Flags: runhidden; Tasks: installservice; Check: IsAdminLoggedOn
 ; Launch Huntarr
 Filename: "http://localhost:9705"; Description: "Open Huntarr Web Interface"; Flags: postinstall shellexec nowait
 ; No need for batch file creation - using direct shortcut instead
+; Final verification of directory permissions
+Filename: "{sys}\cmd.exe"; Parameters: "/c echo Verifying installation permissions..."; Flags: runhidden shellexec postinstall; AfterInstall: VerifyInstallation
+
 ; Launch Huntarr directly if service installation skipped or failed
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--no-service"; Description: "Run Huntarr without service"; Flags: nowait postinstall skipifsilent; Check: not IsTaskSelected('installservice') or not IsAdminLoggedOn
 
@@ -89,30 +99,106 @@ Filename: "{app}\{#MyAppExeName}"; Parameters: "--remove-service"; Flags: runhid
 
 [Code]
 procedure CreateConfigDirs;
+var
+  DirCreationResult: Boolean;
+  DirPath: String;
+  WriteTestPath: String;
+  WriteTestResult: Boolean;
+  PermissionSetResult: Integer;
+  ConfigDirs: array of String;
+  i: Integer;
 begin
-  // Create all necessary configuration directories with explicit permissions
-  ForceDirectories(ExpandConstant('{app}\config\logs'));
-  ForceDirectories(ExpandConstant('{app}\config\stateful'));
-  ForceDirectories(ExpandConstant('{app}\config\user'));
-  ForceDirectories(ExpandConstant('{app}\config\settings'));
-  ForceDirectories(ExpandConstant('{app}\config\history'));
-  ForceDirectories(ExpandConstant('{app}\config\scheduler'));
-  ForceDirectories(ExpandConstant('{app}\config\reset'));
-  ForceDirectories(ExpandConstant('{app}\config\tally'));
-  ForceDirectories(ExpandConstant('{app}\config\swaparr'));
-  ForceDirectories(ExpandConstant('{app}\config\eros'));
+  // Define all required configuration directories
+  SetArrayLength(ConfigDirs, 14);
+  ConfigDirs[0] := '\config';
+  ConfigDirs[1] := '\config\logs';
+  ConfigDirs[2] := '\config\stateful';
+  ConfigDirs[3] := '\config\user';
+  ConfigDirs[4] := '\config\settings';
+  ConfigDirs[5] := '\config\history';
+  ConfigDirs[6] := '\config\scheduler';
+  ConfigDirs[7] := '\config\reset';
+  ConfigDirs[8] := '\config\tally';
+  ConfigDirs[9] := '\config\swaparr';
+  ConfigDirs[10] := '\config\eros';
+  ConfigDirs[11] := '\logs';
+  ConfigDirs[12] := '\frontend\templates';
+  ConfigDirs[13] := '\frontend\static';
   
-  // Create a small test file to verify write permissions
-  SaveStringToFile(ExpandConstant('{app}\config\write_test.tmp'), 'Installation test file', False);
-  DeleteFile(ExpandConstant('{app}\config\write_test.tmp'));
+  // Create all necessary configuration directories with explicit permissions
+  for i := 0 to GetArrayLength(ConfigDirs) - 1 do
+  begin
+    DirPath := ExpandConstant('{app}' + ConfigDirs[i]);
+    DirCreationResult := ForceDirectories(DirPath);
+    
+    if not DirCreationResult then
+    begin
+      Log('Failed to create directory: ' + DirPath);
+      // Add fallback attempt with system command if ForceDirectories fails
+      if not DirExists(DirPath) then
+      begin
+        Log('Attempting fallback directory creation for: ' + DirPath);
+        Exec(ExpandConstant('{sys}\cmd.exe'), '/c mkdir "' + DirPath + '"', '', SW_HIDE, ewWaitUntilTerminated, PermissionSetResult);
+      end;
+    end else begin
+      Log('Successfully created directory: ' + DirPath);
+    end;
+  end;
+  
+  // Create a small test file in each important directory to verify write permissions
+  for i := 0 to GetArrayLength(ConfigDirs) - 1 do
+  begin
+    WriteTestPath := ExpandConstant('{app}' + ConfigDirs[i] + '\write_test.tmp');
+    try
+      WriteTestResult := SaveStringToFile(WriteTestPath, 'Installation test file', False);
+      if WriteTestResult then
+      begin
+        Log('Write test succeeded for: ' + WriteTestPath);
+        DeleteFile(WriteTestPath);
+      end else begin
+        Log('Write test failed for: ' + WriteTestPath);
+      end;
+    except
+      Log('Exception during write test for: ' + WriteTestPath);
+    end;
+  end;
 end;
 
 // Check for admin rights and warn user if they're not an admin
+// Verify that all directories have proper permissions after installation
+procedure VerifyInstallation;
+var
+  VerifyResult: Integer;
+  ConfigPath: String;
+begin
+  ConfigPath := ExpandConstant('{app}\config');
+  Log('Verifying installation directory permissions: ' + ConfigPath);
+  
+  // Create a verification file in the main config directory
+  if SaveStringToFile(ConfigPath + '\verification.tmp', 'Verification file', False) then
+  begin
+    Log('Successfully created verification file in: ' + ConfigPath);
+    DeleteFile(ConfigPath + '\verification.tmp');
+  end
+  else
+  begin
+    Log('WARNING: Failed to create verification file in: ' + ConfigPath);
+    // Try to repair permissions if verification fails
+    if IsAdminLoggedOn then
+    begin
+      Log('Attempting to repair permissions...');
+      Exec(ExpandConstant('{sys}\cmd.exe'), '/c icacls "' + ConfigPath + '" /grant Everyone:(OI)(CI)F /T', '', SW_HIDE, ewWaitUntilTerminated, VerifyResult);
+    end;
+  end;
+end;
+
 function InitializeSetup(): Boolean;
 var
   ResultCode: Integer;
   NonAdminWarningResult: Integer;
 begin
+  Log('Starting Huntarr installation...');
+  
   // Try to stop the service if it's already running
   Exec(ExpandConstant('{sys}\net.exe'), 'stop Huntarr', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   // Give it a moment to stop
