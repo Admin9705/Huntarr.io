@@ -9,6 +9,7 @@ import threading
 import sys
 import signal
 import logging # Use standard logging for initial setup
+import atexit
 
 # Import path configuration early to set up environment
 try:
@@ -17,6 +18,9 @@ try:
 except Exception as e:
     print(f"Warning: Failed to initialize config paths: {str(e)}")
     # Continue anyway - we'll handle this later
+
+# Check if we're on macOS for menubar feature
+is_macos = sys.platform == 'darwin'
 
 # Ensure the 'src' directory is in the Python path
 # This allows importing modules from 'src.primary' etc.
@@ -86,15 +90,25 @@ if sys.platform == 'win32' and len(sys.argv) > 1:
             root_logger.exception(f"Error managing Windows service: {e}")
             sys.exit(1)
 
+# Set up the path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+
 try:
-    # Import the Flask app instance
-    from primary.web_server import app
-    # Import the background task starter function and shutdown helpers from the renamed file
-    from primary.background import start_huntarr, stop_event, shutdown_threads
-    # Configure logging first
-    import logging
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+    # Import core app components
+    from primary.main import start_huntarr, stop_huntarr, scheduler_thread
+    from primary.web_server import create_app_and_server
     from primary.utils.logger import setup_main_logger, get_logger
+    
+    # Only import mac_menubar on macOS
+    if is_macos:
+        try:
+            from primary.utils.mac_menubar import create_menubar
+        except ImportError:
+            huntarr_logger = logging.getLogger("HuntarrRoot")
+            huntarr_logger.warning("Could not import mac_menubar module - menubar will not be available")
+            create_menubar = None
+    else:
+        create_menubar = None
     
     # Initialize main logger
     huntarr_logger = setup_main_logger()
@@ -168,6 +182,9 @@ def main_shutdown_handler(signum, frame):
     if not stop_event.is_set():
         stop_event.set()
 
+# Global to hold the menubar instance
+menubar_instance = None
+
 def main():
     """Main entry point function for Huntarr application.
     This function is called by app_launcher.py in the packaged ARM application.
@@ -175,8 +192,30 @@ def main():
     # Register signal handlers for graceful shutdown in the main process
     signal.signal(signal.SIGINT, main_shutdown_handler)
     signal.signal(signal.SIGTERM, main_shutdown_handler)
-
+    
+    # Create a function to quit properly from the menubar
+    def menubar_quit_callback():
+        huntarr_logger.info("Quit initiated from menubar")
+        stop_event.set()
+        sys.exit(0)
+    
     background_thread = None
+    
+    # Create macOS menubar icon if on macOS
+    global menubar_instance
+    if is_macos and 'create_menubar' in globals() and create_menubar:
+        try:
+            huntarr_logger.info("Creating macOS menubar icon")
+            menubar_instance = create_menubar(quit_callback=menubar_quit_callback)
+            if menubar_instance:
+                huntarr_logger.info("Successfully created macOS menubar icon")
+                # Register cleanup on exit
+                atexit.register(lambda: huntarr_logger.info("Cleaning up menubar icon on exit"))
+            else:
+                huntarr_logger.warning("Failed to create macOS menubar icon")
+        except Exception as e:
+            huntarr_logger.error(f"Error creating macOS menubar icon: {e}")
+            # Continue without menubar if it fails
     try:
         # Start background tasks in a daemon thread
         # Daemon threads exit automatically if the main thread exits unexpectedly,
@@ -222,6 +261,12 @@ def main():
         # huntarr_logger.info("Calling shutdown_threads()...")
         # shutdown_threads() # Uncomment if primary.main.shutdown_threads() does more cleanup
 
+        # Clean menubar resources if needed
+        global menubar_instance
+        if menubar_instance:
+            huntarr_logger.info("Cleaning up menubar resources")
+            # No explicit cleanup needed as we use daemon threads
+        
         huntarr_logger.info("--- Huntarr Main Process Exiting ---")
         return 0  # Success exit code
 
