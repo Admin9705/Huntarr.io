@@ -56,6 +56,7 @@ Source: "LICENSE"; DestDir: "{app}\config"; Flags: ignoreversion; AfterInstall: 
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commondesktop}\{#MyAppName} (No Service)"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--no-service"; Tasks: createshortcut
 
 [Run]
 ; First, remove any existing service
@@ -70,10 +71,7 @@ Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config"" /grant Everyo
 Filename: "{sys}\net.exe"; Parameters: "start Huntarr"; Flags: runhidden; Tasks: installservice; Check: IsAdminLoggedOn
 ; Launch Huntarr
 Filename: "http://localhost:9705"; Description: "Open Huntarr Web Interface"; Flags: postinstall shellexec nowait
-; Create batch file to run Huntarr without service
-Filename: "{sys}\cmd.exe"; Parameters: "/c echo @echo off > ""{app}\Run_Huntarr_No_Service.bat"" && echo cd /d ""{app}"" >> ""{app}\Run_Huntarr_No_Service.bat"" && echo python ""{app}\{#MyAppExeName}"" --no-service >> ""{app}\Run_Huntarr_No_Service.bat"""; Flags: runhidden; Tasks: createshortcut
-; Create shortcut for the batch file
-Filename: "{sys}\cmd.exe"; Parameters: "/c powershell -Command ""& {$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('{commondesktop}\\Huntarr (No Service).lnk'); $s.TargetPath = '{app}\\Run_Huntarr_No_Service.bat'; $s.IconLocation = '{app}\\{#MyAppExeName},0'; $s.Save()}"""; Flags: runhidden; Tasks: createshortcut
+; No need for batch file creation - using direct shortcut instead
 ; Launch Huntarr directly if service installation skipped or failed
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--no-service"; Description: "Run Huntarr without service"; Flags: nowait postinstall skipifsilent; Check: not IsTaskSelected('installservice') or not IsAdminLoggedOn
 
