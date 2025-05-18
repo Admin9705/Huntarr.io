@@ -16,10 +16,20 @@ import win32serviceutil
 # Add the parent directory to sys.path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
+# Import our config paths module early to ensure proper path setup
+try:
+    from primary.utils import config_paths
+    config_dir = config_paths.CONFIG_DIR
+    logs_dir = config_paths.LOGS_DIR
+except Exception as e:
+    # Fallback if config_paths module can't be imported yet
+    config_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'config')
+    logs_dir = os.path.join(config_dir, 'logs')
+    os.makedirs(logs_dir, exist_ok=True)
+
 # Configure basic logging
 logging.basicConfig(
-    filename=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
-                         'config', 'logs', 'windows_service.log'),
+    filename=os.path.join(logs_dir, 'windows_service.log'),
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )

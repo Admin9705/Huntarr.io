@@ -227,6 +227,17 @@ def main():
 
 
 if __name__ == '__main__':
+    # Handle Windows service installation/removal commands
+    if sys.platform == 'win32' and len(sys.argv) > 1:
+        if sys.argv[1] == '--install-service':
+            import primary.windows_service as service
+            service.install_service()
+            sys.exit(0)
+        elif sys.argv[1] == '--remove-service':
+            import primary.windows_service as service
+            service.remove_service()
+            sys.exit(0)
+            
     # Call the main function and exit with its return code
     # This will use the return value from main() (0 for success) as the exit code
     sys.exit(main())
