@@ -65,27 +65,45 @@ class HuntarrMenubar(object):
             return
         
         try:
-            # Get the icon path - icon must be added to the package
+            # Get the icon path - use one of the existing logo files
             icon_path = None
             if getattr(sys, 'frozen', False):
                 # We're running from the bundled package
                 bundle_dir = os.path.dirname(sys.executable)
-                candidates = [
-                    os.path.join(bundle_dir, 'static', 'img', 'favicon.ico'),
-                    os.path.join(bundle_dir, '..', 'Resources', 'frontend', 'static', 'img', 'favicon.ico'),
-                    os.path.join(bundle_dir, 'frontend', 'static', 'img', 'favicon.ico')
+                icon_candidates = [
+                    # Various icon sizes in different potential locations
+                    os.path.join(bundle_dir, 'static', 'logo', '16.png'),
+                    os.path.join(bundle_dir, 'static', 'logo', '32.png'),
+                    os.path.join(bundle_dir, 'static', 'logo', 'huntarr.ico'),
+                    os.path.join(bundle_dir, '..', 'Resources', 'frontend', 'static', 'logo', '16.png'),
+                    os.path.join(bundle_dir, '..', 'Resources', 'frontend', 'static', 'logo', '32.png'),
+                    os.path.join(bundle_dir, '..', 'Resources', 'frontend', 'static', 'logo', 'huntarr.ico'),
+                    # Additional fallback paths
+                    os.path.join(bundle_dir, 'frontend', 'static', 'logo', '16.png'),
+                    os.path.join(os.path.dirname(bundle_dir), 'Resources', 'frontend', 'static', 'logo', '16.png')
                 ]
-                for path in candidates:
+                for path in icon_candidates:
                     if os.path.exists(path):
                         icon_path = path
+                        logger.info(f"Using menubar icon: {icon_path}")
                         break
             else:
                 # Normal Python execution
                 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-                icon_path = os.path.join(base_dir, 'frontend', 'static', 'img', 'favicon.ico')
-                if not os.path.exists(icon_path):
-                    logger.warning(f"Icon not found at {icon_path}")
-                    icon_path = None
+                icon_candidates = [
+                    os.path.join(base_dir, 'frontend', 'static', 'logo', '16.png'),
+                    os.path.join(base_dir, 'frontend', 'static', 'logo', '32.png'),
+                    os.path.join(base_dir, 'frontend', 'static', 'logo', 'huntarr.ico')
+                ]
+                for path in icon_candidates:
+                    if os.path.exists(path):
+                        icon_path = path
+                        logger.info(f"Using menubar icon: {icon_path}")
+                        break
+                
+                if not icon_path:
+                    logger.warning("No suitable icon found for menubar")
+                    # Will use a default icon
             
             # Create the menubar app
             self.menubar = rumps.App("Huntarr", icon=icon_path, quit_button=None)
