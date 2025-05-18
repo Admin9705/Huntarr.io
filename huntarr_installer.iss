@@ -73,7 +73,7 @@ Filename: "http://localhost:9705"; Description: "Open Huntarr Web Interface"; Fl
 ; Create batch file to run Huntarr without service
 Filename: "{sys}\cmd.exe"; Parameters: "/c echo @echo off > ""{app}\Run_Huntarr_No_Service.bat"" && echo cd /d ""{app}"" >> ""{app}\Run_Huntarr_No_Service.bat"" && echo python ""{app}\{#MyAppExeName}"" --no-service >> ""{app}\Run_Huntarr_No_Service.bat"""; Flags: runhidden; Tasks: createshortcut
 ; Create shortcut for the batch file
-Filename: "{sys}\cmd.exe"; Parameters: "/c powershell ""$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut(\"{commondesktop}\Huntarr (No Service).lnk\"); $s.TargetPath = \"{app}\Run_Huntarr_No_Service.bat\"; $s.IconLocation = \"{app}\{#MyAppExeName},0\"; $s.Save()"""; Flags: runhidden; Tasks: createshortcut
+Filename: "{sys}\cmd.exe"; Parameters: "/c powershell -Command ""& {$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('{commondesktop}\\Huntarr (No Service).lnk'); $s.TargetPath = '{app}\\Run_Huntarr_No_Service.bat'; $s.IconLocation = '{app}\\{#MyAppExeName},0'; $s.Save()}"""; Flags: runhidden; Tasks: createshortcut
 ; Launch Huntarr directly if service installation skipped or failed
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--no-service"; Description: "Run Huntarr without service"; Flags: nowait postinstall skipifsilent; Check: not IsTaskSelected('installservice') or not IsAdminLoggedOn
 
