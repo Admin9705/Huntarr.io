@@ -65,8 +65,12 @@ Filename: "{app}\{#MyAppExeName}"; Parameters: "--remove-service"; Flags: runhid
 Filename: "{sys}\cmd.exe"; Parameters: "/c timeout /t 3"; Flags: runhidden
 ; Install the service
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--install-service"; Description: "Install Huntarr as a Windows Service"; Tasks: installservice; Flags: runhidden; Check: IsAdminLoggedOn
-; Grant permissions to the config directory 
+; Grant permissions to the config directory and all subdirectories
 Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+; Ensure proper permissions for each important subdirectory (in case the recursive permission failed)
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config\logs"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config\stateful"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
+Filename: "{sys}\cmd.exe"; Parameters: "/c icacls ""{app}\config\user"" /grant Everyone:(OI)(CI)F"; Flags: runhidden shellexec; Check: IsAdminLoggedOn
 ; Start the service
 Filename: "{sys}\net.exe"; Parameters: "start Huntarr"; Flags: runhidden; Tasks: installservice; Check: IsAdminLoggedOn
 ; Launch Huntarr
@@ -86,10 +90,21 @@ Filename: "{app}\{#MyAppExeName}"; Parameters: "--remove-service"; Flags: runhid
 [Code]
 procedure CreateConfigDirs;
 begin
-  // Create necessary directories with explicit permissions
+  // Create all necessary configuration directories with explicit permissions
   ForceDirectories(ExpandConstant('{app}\config\logs'));
   ForceDirectories(ExpandConstant('{app}\config\stateful'));
   ForceDirectories(ExpandConstant('{app}\config\user'));
+  ForceDirectories(ExpandConstant('{app}\config\settings'));
+  ForceDirectories(ExpandConstant('{app}\config\history'));
+  ForceDirectories(ExpandConstant('{app}\config\scheduler'));
+  ForceDirectories(ExpandConstant('{app}\config\reset'));
+  ForceDirectories(ExpandConstant('{app}\config\tally'));
+  ForceDirectories(ExpandConstant('{app}\config\swaparr'));
+  ForceDirectories(ExpandConstant('{app}\config\eros'));
+  
+  // Create a small test file to verify write permissions
+  SaveStringToFile(ExpandConstant('{app}\config\write_test.tmp'), 'Installation test file', False);
+  DeleteFile(ExpandConstant('{app}\config\write_test.tmp'));
 end;
 
 // Check for admin rights and warn user if they're not an admin

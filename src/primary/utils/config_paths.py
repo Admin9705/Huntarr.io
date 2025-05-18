@@ -91,13 +91,45 @@ TALLY_DIR = CONFIG_PATH / "tally"  # Add tally directory for stats
 SWAPARR_DIR = CONFIG_PATH / "swaparr"  # Add Swaparr directory
 EROS_DIR = CONFIG_PATH / "eros"  # Add Eros directory
 
-# Create all directories
+# Create all directories with enhanced error reporting
 for dir_path in [LOG_DIR, SETTINGS_DIR, USER_DIR, STATEFUL_DIR, HISTORY_DIR, 
                 SCHEDULER_DIR, RESET_DIR, TALLY_DIR, SWAPARR_DIR, EROS_DIR]:
     try:
         dir_path.mkdir(parents=True, exist_ok=True)
+        # Verify the directory was created and is writable
+        if not dir_path.exists():
+            print(f"ERROR: Directory {dir_path} could not be created despite no error being raised.")
+        elif not os.access(dir_path, os.W_OK):
+            print(f"ERROR: Directory {dir_path} was created but is not writable.")
+        else:
+            # Test write access
+            test_file = dir_path / f"write_test_{int(time.time())}.tmp"
+            try:
+                with open(test_file, "w") as f:
+                    f.write("test")
+                if test_file.exists():
+                    test_file.unlink()  # Remove the test file
+                    print(f"Successfully created and verified directory: {dir_path}")
+            except Exception as write_err:
+                print(f"WARNING: Directory {dir_path} exists but write test failed: {write_err}")
     except Exception as e:
-        print(f"Warning: Could not create directory {dir_path}: {str(e)}")
+        print(f"ERROR: Could not create directory {dir_path}: {str(e)}")
+        
+        # Try to diagnose the issue
+        parent_dir = dir_path.parent
+        if not parent_dir.exists():
+            print(f"    - Parent directory {parent_dir} does not exist")
+        elif not os.access(parent_dir, os.W_OK):
+            print(f"    - Parent directory {parent_dir} is not writable")
+        
+        # For Windows, check if running as administrator
+        if OS_TYPE == "Windows":
+            try:
+                import ctypes
+                if not ctypes.windll.shell32.IsUserAnAdmin():
+                    print(f"    - Not running with administrator privileges, which may affect directory creation")
+            except:
+                pass
 
 # Set environment variables for backwards compatibility
 os.environ["HUNTARR_CONFIG_DIR"] = str(CONFIG_PATH)

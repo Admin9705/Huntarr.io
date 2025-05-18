@@ -226,10 +226,56 @@ def main_shutdown_handler(signum, frame):
     if not stop_event.is_set():
         stop_event.set()
 
+def initialize_config():
+    """Initialize and verify configuration directories before starting the application.
+    This ensures all required directories exist and are writable.
+    """
+    try:
+        from src.primary.utils import config_paths
+        # Get all important config directories
+        dirs_to_check = [
+            config_paths.CONFIG_PATH,
+            config_paths.LOG_DIR,
+            config_paths.USER_DIR,
+            config_paths.STATEFUL_DIR,
+            config_paths.SETTINGS_DIR,
+            config_paths.HISTORY_DIR,
+            config_paths.SCHEDULER_DIR,
+            config_paths.RESET_DIR,
+            config_paths.TALLY_DIR,
+            config_paths.SWAPARR_DIR,
+            config_paths.EROS_DIR
+        ]
+        
+        # Verify all directories exist and are writable
+        for dir_path in dirs_to_check:
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path, exist_ok=True)
+                print(f"Created missing directory: {dir_path}")
+            
+            if not os.access(dir_path, os.W_OK):
+                print(f"WARNING: Directory {dir_path} exists but is not writable!")
+                # Try to fix permissions on Windows
+                if sys.platform == 'win32':
+                    try:
+                        os.system(f'icacls "{dir_path}" /grant Everyone:(OI)(CI)F')
+                        print(f"Attempted to fix permissions for {dir_path}")
+                    except Exception as perm_err:
+                        print(f"Failed to fix permissions: {perm_err}")
+        
+        return True
+    except Exception as e:
+        print(f"ERROR during config directory initialization: {e}")
+        return False
+
 def main():
     """Main entry point function for Huntarr application.
     This function is called by app_launcher.py in the packaged ARM application.
     """
+    # First ensure all configuration directories exist
+    if not initialize_config():
+        print("WARNING: Configuration initialization failed. Some features may not work properly.")
+    
     # Register signal handlers for graceful shutdown in the main process
     signal.signal(signal.SIGINT, main_shutdown_handler)
     signal.signal(signal.SIGTERM, main_shutdown_handler)

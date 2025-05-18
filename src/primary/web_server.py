@@ -123,6 +123,24 @@ else:
     if os.path.exists(template_dir):
         print(f"Template dir contents: {os.listdir(template_dir)}")
 
+# Verify template directory exists
+if not os.path.exists(template_dir):
+    print(f"ERROR: Template directory {template_dir} does not exist!")
+    try:
+        os.makedirs(template_dir, exist_ok=True)
+        print(f"Created missing template directory {template_dir}")
+    except Exception as e:
+        print(f"Failed to create template directory: {e}")
+
+# Verify static directory exists
+if not os.path.exists(static_dir):
+    print(f"ERROR: Static directory {static_dir} does not exist!")
+    try:
+        os.makedirs(static_dir, exist_ok=True)
+        print(f"Created missing static directory {static_dir}")
+    except Exception as e:
+        print(f"Failed to create static directory: {e}")
+
 # Create Flask app with additional debug logging
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 print(f"Flask app created with template_folder: {app.template_folder}")
