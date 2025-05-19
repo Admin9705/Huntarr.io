@@ -100,6 +100,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 animation: pulse-${app} 2s infinite;
                 transition: stroke-dashoffset 0.5s ease;
             }
+            
+            @keyframes pulse-stop {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.2); }
+                100% { transform: scale(1); }
+            }
+            
+            .stop-sign {
+                animation: pulse-stop 1.5s infinite;
+            }
         `;
         document.head.appendChild(style);
         
@@ -110,15 +120,51 @@ document.addEventListener('DOMContentLoaded', function() {
             const newPercentage = Math.min(newCount / newLimit, 1);
             const newDashOffset = circumference * (1 - newPercentage);
             
-            progressCircle.setAttribute("stroke-dashoffset", newDashOffset);
+            // Check if usage exceeds limit
+            const limitExceeded = newCount > newLimit;
             
-            // Change color based on usage percentage
-            if (newPercentage > 0.9) {
-                progressCircle.setAttribute("stroke", "#e74c3c"); // Red when near limit
-            } else if (newPercentage > 0.75) {
-                progressCircle.setAttribute("stroke", "#f39c12"); // Orange/yellow for moderate usage
+            // If we already have a stop sign, remove it first
+            const existingStopSign = svg.querySelector('.stop-sign');
+            if (existingStopSign) {
+                svg.removeChild(existingStopSign);
+            }
+            
+            if (limitExceeded) {
+                // Hide original API text icon, we'll show our own inside the circle
+                const apiIcon = document.querySelector(`#${app}-api-icon`);
+                if (apiIcon) {
+                    apiIcon.style.display = 'none';
+                }
+                
+                // Create stop sign icon inside the circle
+                const stopSign = document.createElementNS(svgNamespace, "polygon");
+                stopSign.setAttribute("points", `${svgSize/2-5},${svgSize/2-8} ${svgSize/2+5},${svgSize/2-8} ${svgSize/2+8},${svgSize/2-5} ${svgSize/2+8},${svgSize/2+5} ${svgSize/2+5},${svgSize/2+8} ${svgSize/2-5},${svgSize/2+8} ${svgSize/2-8},${svgSize/2+5} ${svgSize/2-8},${svgSize/2-5}`);
+                stopSign.setAttribute("fill", "#e74c3c");
+                stopSign.setAttribute("class", "stop-sign");
+                // Add pulsing animation to stop sign
+                stopSign.setAttribute("style", "animation: pulse-stop 1.5s infinite;");
+                svg.appendChild(stopSign);
+                
+                // Make progress circle red and fully illuminated
+                progressCircle.setAttribute("stroke", "#e74c3c"); // Red for exceeded limit
+                progressCircle.setAttribute("stroke-dashoffset", 0); // Show full circle
             } else {
-                progressCircle.setAttribute("stroke", appColors[app]); // Default color
+                // Show the regular API icon if it exists and was hidden
+                const apiIcon = document.querySelector(`#${app}-api-icon`);
+                if (apiIcon) {
+                    apiIcon.style.display = '';
+                }
+                
+                progressCircle.setAttribute("stroke-dashoffset", newDashOffset);
+                
+                // Change color based on usage percentage
+                if (newPercentage > 0.9) {
+                    progressCircle.setAttribute("stroke", "#e74c3c"); // Red when near limit
+                } else if (newPercentage > 0.75) {
+                    progressCircle.setAttribute("stroke", "#f39c12"); // Orange/yellow for moderate usage
+                } else {
+                    progressCircle.setAttribute("stroke", appColors[app]); // Default color
+                }
             }
         };
         
