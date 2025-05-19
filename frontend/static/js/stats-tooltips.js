@@ -84,6 +84,39 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
+ * Format large numbers with appropriate suffixes (K, MIL, BIL, TRI)
+ * @param {number} num - Number to format
+ * @returns {string} Formatted number string
+ */
+function formatLargeNumber(num) {
+    if (num < 1000) {
+        // 0-999: Display as is
+        return num.toString();
+    } else if (num < 10000) {
+        // 1,000-9,999: Display with single decimal and K (e.g., 5.2K)
+        return (num / 1000).toFixed(1) + 'K';
+    } else if (num < 100000) {
+        // 10,000-99,999: Display with single decimal and K (e.g., 75.4K)
+        return (num / 1000).toFixed(1) + 'K';
+    } else if (num < 1000000) {
+        // 100,000-999,999: Display with K (no decimal) (e.g., 982K)
+        return Math.floor(num / 1000) + 'K';
+    } else if (num < 10000000) {
+        // 1M-9.9M: Display with single decimal and MIL (e.g., 2.4 MIL)
+        return (num / 1000000).toFixed(1) + ' MIL';
+    } else if (num < 1000000000) {
+        // 10M-999M: Display with MIL (no decimal) (e.g., 234 MIL)
+        return Math.floor(num / 1000000) + ' MIL';
+    } else if (num < 1000000000000) {
+        // 1B-999B: Display with BIL (e.g., 4.5 BIL)
+        return (num / 1000000000).toFixed(1) + ' BIL';
+    } else {
+        // 1T+: Display with TRI
+        return (num / 1000000000000).toFixed(1) + ' TRI';
+    }
+}
+
+/**
  * Initialize tooltips on all stat number elements
  */
 function initStatsTooltips() {
@@ -153,7 +186,7 @@ function showStatsTooltip(e) {
         
         <div class="tooltip-row">
             <span class="tooltip-label">Total count:</span>
-            <span class="tooltip-value">${rawValue.toLocaleString()}</span>
+            <span class="tooltip-value">${formatLargeNumber(rawValue)}</span>
         </div>
         
         <div class="tooltip-row">
