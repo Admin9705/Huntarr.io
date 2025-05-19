@@ -3,6 +3,20 @@
  * Provides detailed tooltip information for dashboard statistics
  */
 
+// Create global StatsTooltips object to expose functions to other scripts
+window.StatsTooltips = {
+    // Global storage for raw stats data from API
+    rawStatsData: {},
+    
+    // Initialize tooltips
+    init: initStatsTooltips,
+    
+    // Update raw stats data from API
+    updateRawStatsData: function(stats) {
+        this.rawStatsData = stats || {};
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Create tooltip container
     const tooltipContainer = document.createElement('div');
@@ -119,7 +133,17 @@ function showStatsTooltip(e) {
     const target = e.currentTarget;
     const app = target.getAttribute('data-app');
     const type = target.getAttribute('data-type');
-    const rawValue = parseInt(target.textContent.replace(/[^0-9]/g, '') || '0');
+    
+    // Use raw data from API if available, fallback to parsed value from DOM
+    let rawValue = 0;
+    
+    if (StatsTooltips.rawStatsData && StatsTooltips.rawStatsData[app] && typeof StatsTooltips.rawStatsData[app][type] !== 'undefined') {
+        // Use exact value from API data
+        rawValue = StatsTooltips.rawStatsData[app][type];
+    } else {
+        // Fallback to parsing the displayed value
+        rawValue = parseInt(target.textContent.replace(/[^0-9]/g, '') || '0');
+    }
     
     // App-specific details with proper color coding
     const appDetails = {
@@ -153,7 +177,7 @@ function showStatsTooltip(e) {
         
         <div class="tooltip-row">
             <span class="tooltip-label">Total count:</span>
-            <span class="tooltip-value">${rawValue.toLocaleString()}</span>
+            <span class="tooltip-value">${rawValue.toLocaleString()} <span style="opacity: 0.7; font-size: 0.9em;">(${formatLargeNumber(rawValue)} displayed)</span></span>
         </div>
         
         <div class="tooltip-row">

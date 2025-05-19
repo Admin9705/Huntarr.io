@@ -2041,6 +2041,12 @@ let huntarrUI = {
             })
             .then(data => {
                 if (data.success && data.stats) {
+                    // Store raw data in the StatsTooltips module for exact number display
+                    if (typeof StatsTooltips !== 'undefined' && StatsTooltips.updateRawStatsData) {
+                        StatsTooltips.updateRawStatsData(data.stats);
+                    }
+                    
+                    // Update the display with formatted values
                     this.updateStatsDisplay(data.stats);
                 } else {
                     console.error('Failed to load statistics:', data.message || 'Unknown error');
@@ -2084,20 +2090,17 @@ let huntarrUI = {
             // 100,000-999,999: Display with K (no decimal) (e.g., 982K)
             return Math.floor(num / 1000) + 'K';
         } else if (num < 10000000) {
-            // 1,000,000-9,999,999: Display with single decimal and MIL (e.g., 9.7 MIL)
-            return (num / 1000000).toFixed(1) + ' MIL';
-        } else if (num < 100000000) {
-            // 10,000,000-99,999,999: Display with single decimal and MIL (e.g., 99.7 MIL)
-            return (num / 1000000).toFixed(1) + ' MIL';
+            // 1M-9.9M: Display with single decimal and M (e.g., 2.4M)
+            return (num / 1000000).toFixed(1) + 'M';
         } else if (num < 1000000000) {
-            // 100,000,000-999,999,999: Display with MIL (no decimal)
-            return Math.floor(num / 1000000) + ' MIL';
+            // 100,000,000-999,999,999: Display with M (no decimal)
+            return Math.floor(num / 1000000) + 'M';
         } else if (num < 1000000000000) {
-            // 1B - 999B: Display with single decimal and BIL
-            return (num / 1000000000).toFixed(1) + ' BIL';
+            // 1B - 999B: Display with single decimal and B
+            return (num / 1000000000).toFixed(1) + 'B';
         } else {
-            // 1T+: Display with TRI
-            return (num / 1000000000000).toFixed(1) + ' TRI';
+            // 1T+: Display with T
+            return (num / 1000000000000).toFixed(1) + 'T';
         }
     },
 
