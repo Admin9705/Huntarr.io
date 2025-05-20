@@ -363,7 +363,7 @@
     
     /* Logs container styling with modern gradient */
     .logs {
-        height: calc(100vh - 250px); /* Increased to account for header height */
+        height: calc(100vh - 290px); /* Adjusted to account for header height and pagination */
         overflow-y: auto;
         background: linear-gradient(135deg, rgba(30, 39, 56, 0.95) 0%, rgba(14, 20, 32, 0.95) 50%, rgba(16, 24, 36, 0.95) 100%);
         border-radius: 10px;
@@ -602,9 +602,9 @@
         
         /* Mobile specific log container styling */
         .logs {
-            height: calc(100vh - 300px); /* Adjusted height for mobile + account for header */
-            padding-bottom: 120px; /* Extra padding to ensure no content is hidden */
-            margin-bottom: 60px; /* Space for mobile browser UI */
+            height: calc(100vh - 340px); /* Adjusted height for mobile + account for header and pagination */
+            padding-bottom: 20px; /* Reduced padding since we have pagination below */
+            margin-bottom: 0; /* Space taken care of by pagination controls */
         }
         
         /* Make space for fixed elements at bottom on mobile */
